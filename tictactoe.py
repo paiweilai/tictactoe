@@ -3,10 +3,8 @@ import random
 
 
 class TicTacToe:
-    """
-    a class for the TicTacToe game
-    """
-    def __init__(self, board_size = 3, win_length = 3, ai = True):
+
+    def __init__(self, board_size=3, ai=True):
         """
         None for empty
         True for O
@@ -15,17 +13,12 @@ class TicTacToe:
         self.board_size = board_size
         self.num_positions = board_size * board_size
         self.board = [None] * self.num_positions
-        self.win_length = win_length
-        # ai side
         self.ai = ai
 
     def display(self, input_list):
         assert len(input_list) == self.num_positions
-        for row in xrange(self.board_size):
-            start_pos = row * self.board_size
-            end_pos = start_pos + self.board_size
-            row_str = '|'.join(map(str, input_list[start_pos:end_pos]))
-            print row_str
+        for i in xrange(0, self.num_positions, self.board_size):
+            print '|'.join(str(x) for x in input_list[i:i+self.board_size])
 
     def display_movement(self):
         print "Movement Key:"
@@ -33,27 +26,37 @@ class TicTacToe:
 
     def display_board(self):
         print "Board:"
-        input = [' ' if piece is None else 'O' if piece == True else 'X'
-                    for piece in self.board]
-        self.display(input)
+        input_list = [
+            ' ' if piece is None else 'O' if piece is True else 'X'
+            for piece in self.board
+        ]
+        self.display(input_list)
 
     def index2position(self, index):
-        assert isinstance(index, int)
-        if index < 1 or index > self.num_positions:
-            # invalid index
+        if self.is_valid_index(index):
+            row = (index - 1) / self.board_size
+            col = (index - 1) % self.board_size
+            return row, col
+        else:
             return -1, -1
-        row = (index - 1) / self.board_size
-        col = (index - 1) % self.board_size
-        return row, col
+
+    def is_valid_index(self, index):
+        assert isinstance(index, int)
+        return 1 <= index <= self.num_positions
 
     def position2index(self, row, col):
+        if self.is_valid_position(row, col):
+            return row * self.board_size + col + 1
+        else:
+            return -1
+
+    def is_valid_position(self, row, col):
         assert isinstance(row, int)
         assert isinstance(col, int)
-        if row < 0 or row >= self.board_size or \
-            col < 0 or col >= self.board_size:
-            # invalid row or col
-            return -1
-        return row * self.board_size + col + 1
+        return (
+            0 <= row < self.board_size and
+            0 <= col < self.board_size
+        )
 
     def get_position(self):
         try:
@@ -62,14 +65,17 @@ class TicTacToe:
             print "invalid movement key"
             return self.get_position()
 
-        if index < 1 or index > self.num_positions:
+        if not self.is_valid_index(index):
             print "movement key out of range"
             return self.get_position()
-        elif self.board[index-1] is not None:
+        elif not self.is_valid_move(index):
             print "position already taken"
             return self.get_position()
         else:
             return index
+
+    def is_valid_move(self, index):
+        return self.board[index-1] is None
 
     def ai_move(self, debug=False):
         # squared scores work better
@@ -85,23 +91,22 @@ class TicTacToe:
             self.display(scores)
 
         max_score = max(scores)
-        max_idx = [index for index in xrange(len(scores))
-                        if scores[index] == max_score and self.board[index] is None]
+        max_idx = [
+            index for index in xrange(len(scores))
+            if scores[index] == max_score and self.board[index] is None
+        ]
         if len(max_idx) > 0:
             idx = random.choice(max_idx) + 1
         else:
             return None
         print "I will put an O at position %d" % idx
         self.place_piece(idx, True)
-        if self.is_game_over(idx):
-            return True     # ai wins
-        else:
-            return False
+        return self.is_game_over(idx)
 
     def place_piece(self, index, piece):
         assert isinstance(index, int)
         assert isinstance(piece, bool)
-        if self.board[index-1] is not None:
+        if not self.is_valid_move(index):
             print("position %d already taken" % index)
             return False
         else:
@@ -110,15 +115,12 @@ class TicTacToe:
             return True
 
     def is_game_over(self, index):
-        if self.compute_score(index) >= self.win_length:
-             return True
-        else:
-             return False
+        return self.compute_score(index) >= self.board_size
 
     def compute_scores(self, piece=None):
         scores = []
         for index in xrange(1, self.num_positions+1):
-            if self.board[index-1] is None:
+            if self.is_valid_move(index):
                 scores.append(self.compute_score(index, piece))
             else:
                 scores.append(0)
@@ -130,17 +132,16 @@ class TicTacToe:
         # checking 8 directions
         # ul, u, ur, r, dr, d, dl, l
         ul = self.check_one_direction(index, -1, -1, piece)
-        u  = self.check_one_direction(index, -1,  0, piece)
+        u = self.check_one_direction(index, -1,  0, piece)
         ur = self.check_one_direction(index, -1, +1, piece)
-        r  = self.check_one_direction(index,  0, +1, piece)
+        r = self.check_one_direction(index,  0, +1, piece)
         dr = self.check_one_direction(index, +1, +1, piece)
-        d  = self.check_one_direction(index, +1,  0, piece)
+        d = self.check_one_direction(index, +1,  0, piece)
         dl = self.check_one_direction(index, +1, -1, piece)
-        l  = self.check_one_direction(index,  0, -1, piece)
+        l = self.check_one_direction(index,  0, -1, piece)
         return max([ul + dr + 1, ur + dl + 1, l + r + 1, u + d + 1])
 
     def check_one_direction(self, index, d_row, d_col, piece=None):
-        # 1 <= index <= self.num_positions
         row, col = self.index2position(index)
         if d_row > 0:
             row_end = self.board_size - 1
@@ -180,7 +181,7 @@ if __name__ == "__main__":
     human_side = False
     ai_side = not human_side
 
-    b = TicTacToe(board_size=3, win_length=3, ai=ai_side)
+    b = TicTacToe(board_size=3, ai=ai_side)
     b.display_movement()
     b.display_board()
 
