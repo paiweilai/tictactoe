@@ -117,21 +117,15 @@ class TicTacToe:
 
     def compute_score(self, index, piece):
         # checking 8 directions
-        # ul, u, ur, r, dr, d, dl, l
         ul = self.check_one_direction(index, piece, -1, -1)
         u = self.check_one_direction(index, piece, -1, 0)
         ur = self.check_one_direction(index, piece, -1, 1)
-        r = self.check_one_direction(index, piece, 0, 1)
-        dr = self.check_one_direction(index, piece, 1, 1)
-        d = self.check_one_direction(index, piece, 1, 0)
-        dl = self.check_one_direction(index, piece, 1, -1)
         l = self.check_one_direction(index, piece, 0, -1)
-        return max([
-            ul + dr + 1,
-            ur + dl + 1,
-            l + r + 1,
-            u + d + 1,
-        ])
+        r = self.check_one_direction(index, piece, 0, 1)
+        dl = self.check_one_direction(index, piece, 1, -1)
+        d = self.check_one_direction(index, piece, 1, 0)
+        dr = self.check_one_direction(index, piece, 1, 1)
+        return max([ul + dr, ur + dl, l + r, u + d]) + 1
 
     def check_one_direction(self, index, piece, d_row, d_col):
         row, col = self.index2position(index)
