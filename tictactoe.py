@@ -4,7 +4,7 @@ import random
 
 class TicTacToe:
 
-    def __init__(self, board_size=3, ai=True):
+    def __init__(self, board_size, ai_side):
         """
         None for empty
         True for O
@@ -13,7 +13,7 @@ class TicTacToe:
         self.board_size = board_size
         self.num_positions = board_size * board_size
         self.board = [None] * self.num_positions
-        self.ai = ai
+        self.ai_side = ai_side
 
     def display(self, input_list):
         assert len(input_list) == self.num_positions
@@ -22,7 +22,7 @@ class TicTacToe:
 
     def display_movement(self):
         print "Movement Key:"
-        self.display(range(1, self.num_positions+1))
+        self.display(range(1, self.num_positions + 1))
 
     def display_board(self):
         print "Board:"
@@ -63,12 +63,12 @@ class TicTacToe:
             try:
                 index = int(raw_input("Where to? "))
             except ValueError:
-                print "invalid movement key"
+                print "Invalid movement key."
             else:
                 if not self.is_valid_index(index):
-                    print "movement key out of range"
+                    print "Movement key out of range."
                 elif not self.is_valid_move(index):
-                    print "position already taken"
+                    print "Position already taken."
                 else:
                     return index
 
@@ -77,15 +77,15 @@ class TicTacToe:
 
     def ai_move(self, debug=False):
         # squared scores work better
-        gain = map(lambda x: x*x, self.compute_scores(piece=self.ai))
-        risk = map(lambda x: x*x, self.compute_scores(piece=not self.ai))
-        scores = [gain[idx] + risk[idx] for idx in xrange(len(gain))]
+        gain = [x * x for x in self.compute_scores(self.ai_side)]
+        risk = [x * x for x in self.compute_scores(not self.ai_side)]
+        scores = [x + y for x, y in zip(gain, risk)]
         if debug:
-            print "potential gain:"
+            print "Potential gain:"
             self.display(gain)
-            print "potential risk:"
+            print "Potential risk:"
             self.display(risk)
-            print "move scores:"
+            print "Move scores:"
             self.display(scores)
 
         max_score = max(scores)
@@ -94,39 +94,34 @@ class TicTacToe:
             if scores[index] == max_score and self.board[index] is None
         ]
         if len(max_idx) > 0:
-            idx = random.choice(max_idx) + 1
+            return random.choice(max_idx) + 1
         else:
-            return None
-        print "I will put an O at position %d" % idx
-        self.place_piece(idx, True)
-        return self.is_game_over(idx)
+            return None  # no more move
 
     def place_piece(self, index, piece):
         assert isinstance(index, int)
         assert isinstance(piece, bool)
         if not self.is_valid_move(index):
-            print("position %d already taken" % index)
+            print "Position %d already taken" % index
             return False
         else:
-            self.board[index-1] = piece
+            self.board[index - 1] = piece
             self.display_board()
             return True
 
     def is_game_over(self, index):
-        return self.compute_score(index) >= self.board_size
+        return self.compute_score(index, None) >= self.board_size
 
-    def compute_scores(self, piece=None):
-        scores = []
-        for index in xrange(1, self.num_positions+1):
-            if self.is_valid_move(index):
-                scores.append(self.compute_score(index, piece))
-            else:
-                scores.append(0)
-        return scores
+    def compute_scores(self, piece):
+        return [
+            self.compute_score(index, piece) if self.is_valid_move(index) else 0
+            for index in xrange(1, self.num_positions + 1)
+        ]
 
-    def compute_score(self, index, piece=None):
+    def compute_score(self, index, piece):
         if piece is None:
-            piece = self.board[index-1]
+            piece = self.board[index - 1]
+        print self.board
         # checking 8 directions
         # ul, u, ur, r, dr, d, dl, l
         ul = self.check_one_direction(index, -1, -1, piece)
@@ -137,7 +132,14 @@ class TicTacToe:
         d = self.check_one_direction(index, +1,  0, piece)
         dl = self.check_one_direction(index, +1, -1, piece)
         l = self.check_one_direction(index,  0, -1, piece)
-        return max([ul + dr + 1, ur + dl + 1, l + r + 1, u + d + 1])
+        print ul, u, ur
+        print l, r
+        print dl, d, dr
+        # import pdb
+        # pdb.set_trace()
+        x = max([ul + dr + 1, ur + dl + 1, l + r + 1, u + d + 1])
+        print x
+        return x
 
     def check_one_direction(self, index, d_row, d_col, piece=None):
         row, col = self.index2position(index)
@@ -176,26 +178,32 @@ class TicTacToe:
 if __name__ == "__main__":
     print "Welcome to Tic-Tac-Toe. Please make your move selection by " \
           "entering a number corresponding to the movement key on the right."
+
     human_side = False
     ai_side = not human_side
 
-    b = TicTacToe(board_size=3, ai=ai_side)
-    b.display_movement()
-    b.display_board()
+    t = TicTacToe(board_size=3, ai_side=ai_side)
+    t.display_board()
 
-    idx = b.get_position()
-    print "You have put an X at position %d" % idx
-    b.place_piece(idx, human_side)
-    while not b.is_game_over(idx):
-        state = b.ai_move(debug=False)
-        if state is None:
-            print "No more moves, it's a draw"
-            exit()
-        elif state:
+    while True:
+        t.display_movement()
+
+        index = t.get_position()
+        print "You have put an X at position %d." % index
+        t.place_piece(index, human_side)
+
+        if t.is_game_over(index):
+            print "You have beaten my poor AI."
+            break
+
+        index = t.ai_move(debug=False)
+        if index is None:
+            print "No more moves, it's a draw."
+            break
+        else:
+            print "I will put an O at position %d." % index
+            t.place_piece(index, ai_side)
+
+        if t.is_game_over(index):
             print "You lose to a computer!"
-            exit()
-        b.display_movement()
-        idx = b.get_position()
-        print "You have put an X at position %d" % idx
-        b.place_piece(idx, human_side)
-    print "You have beaten my poor AI"
+            break
