@@ -18,7 +18,7 @@ class TicTacToe:
     def display(self, input_list):
         assert len(input_list) == self.num_positions
         for i in xrange(0, self.num_positions, self.board_size):
-            print '|'.join(str(x) for x in input_list[i:i+self.board_size])
+            print '|'.join(str(x) for x in input_list[i:i + self.board_size])
 
     def display_movement(self):
         print "Movement Key:"
@@ -26,11 +26,10 @@ class TicTacToe:
 
     def display_board(self):
         print "Board:"
-        input_list = [
-            ' ' if piece is None else 'O' if piece is True else 'X'
+        self.display(
+            {None: ' ', True: 'O', False: 'X'}[piece]
             for piece in self.board
-        ]
-        self.display(input_list)
+        )
 
     def index2position(self, index):
         if self.is_valid_index(index):
@@ -73,7 +72,7 @@ class TicTacToe:
                     return index
 
     def is_valid_move(self, index):
-        return self.board[index-1] is None
+        return self.board[index - 1] is None
 
     def ai_move(self, debug=False):
         # squared scores work better
@@ -89,12 +88,12 @@ class TicTacToe:
             self.display(scores)
 
         max_score = max(scores)
-        max_idx = [
-            index for index in xrange(len(scores))
-            if scores[index] == max_score and self.board[index] is None
+        candidates = [
+            index + 1 for index, score in enumerate(scores)
+            if score == max_score and self.board[index] is None
         ]
-        if len(max_idx) > 0:
-            return random.choice(max_idx) + 1
+        if len(candidates) > 0:
+            return random.choice(candidates)
         else:
             return None  # no more move
 
@@ -103,11 +102,9 @@ class TicTacToe:
         assert isinstance(piece, bool)
         if not self.is_valid_move(index):
             print "Position %d already taken" % index
-            return False
         else:
             self.board[index - 1] = piece
             self.display_board()
-            return True
 
     def is_game_over(self, index):
         return self.compute_score(index, None) >= self.board_size
@@ -119,29 +116,24 @@ class TicTacToe:
         ]
 
     def compute_score(self, index, piece):
-        if piece is None:
-            piece = self.board[index - 1]
-        print self.board
         # checking 8 directions
         # ul, u, ur, r, dr, d, dl, l
-        ul = self.check_one_direction(index, -1, -1, piece)
-        u = self.check_one_direction(index, -1,  0, piece)
-        ur = self.check_one_direction(index, -1, +1, piece)
-        r = self.check_one_direction(index,  0, +1, piece)
-        dr = self.check_one_direction(index, +1, +1, piece)
-        d = self.check_one_direction(index, +1,  0, piece)
-        dl = self.check_one_direction(index, +1, -1, piece)
-        l = self.check_one_direction(index,  0, -1, piece)
-        print ul, u, ur
-        print l, r
-        print dl, d, dr
-        # import pdb
-        # pdb.set_trace()
-        x = max([ul + dr + 1, ur + dl + 1, l + r + 1, u + d + 1])
-        print x
-        return x
+        ul = self.check_one_direction(index, piece, -1, -1)
+        u = self.check_one_direction(index, piece, -1, 0)
+        ur = self.check_one_direction(index, piece, -1, 1)
+        r = self.check_one_direction(index, piece, 0, 1)
+        dr = self.check_one_direction(index, piece, 1, 1)
+        d = self.check_one_direction(index, piece, 1, 0)
+        dl = self.check_one_direction(index, piece, 1, -1)
+        l = self.check_one_direction(index, piece, 0, -1)
+        return max([
+            ul + dr + 1,
+            ur + dl + 1,
+            l + r + 1,
+            u + d + 1,
+        ])
 
-    def check_one_direction(self, index, d_row, d_col, piece=None):
+    def check_one_direction(self, index, piece, d_row, d_col):
         row, col = self.index2position(index)
         if d_row > 0:
             row_end = self.board_size - 1
@@ -162,16 +154,18 @@ class TicTacToe:
         elif d_col == 0:
             limit = int(math.fabs(row_end - row))
         else:
-            limit = int(min(math.fabs(row_end-row), math.fabs(col_end-col)))
+            limit = int(min(math.fabs(row_end - row), math.fabs(col_end - col)))
 
         if piece is None:
-            piece = self.board[index-1]
-        for i in xrange(1, limit+1):
+            piece = self.board[index - 1]
+
+        for i in xrange(1, limit + 1):
             r = row + i * d_row
             c = col + i * d_col
             idx = self.position2index(r, c)
-            if self.board[idx-1] != piece:
-                return i-1
+            if self.board[idx - 1] != piece:
+                return i - 1
+
         return limit
 
 
