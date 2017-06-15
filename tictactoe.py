@@ -59,20 +59,18 @@ class TicTacToe:
         )
 
     def get_position(self):
-        try:
-            index = int(raw_input("Where to? "))
-        except ValueError:
-            print "invalid movement key"
-            return self.get_position()
-
-        if not self.is_valid_index(index):
-            print "movement key out of range"
-            return self.get_position()
-        elif not self.is_valid_move(index):
-            print "position already taken"
-            return self.get_position()
-        else:
-            return index
+        while True:
+            try:
+                index = int(raw_input("Where to? "))
+            except ValueError:
+                print "invalid movement key"
+            else:
+                if not self.is_valid_index(index):
+                    print "movement key out of range"
+                elif not self.is_valid_move(index):
+                    print "position already taken"
+                else:
+                    return index
 
     def is_valid_move(self, index):
         return self.board[index-1] is None
