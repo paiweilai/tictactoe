@@ -1,4 +1,3 @@
-import math
 import random
 
 
@@ -26,10 +25,10 @@ class TicTacToe:
 
     def display_board(self):
         print "Board:"
-        self.display(
+        self.display([
             {None: ' ', True: 'O', False: 'X'}[piece]
             for piece in self.board
-        )
+        ])
 
     def index2position(self, index):
         if self.is_valid_index(index):
@@ -58,6 +57,8 @@ class TicTacToe:
         )
 
     def get_position(self):
+        if all(piece is not None for piece in self.board):
+            return None
         while True:
             try:
                 index = int(raw_input("Where to? "))
@@ -111,7 +112,8 @@ class TicTacToe:
 
     def compute_scores(self, piece):
         return [
-            self.compute_score(index, piece) if self.is_valid_move(index) else 0
+            self.compute_score(index, piece)
+            if self.is_valid_move(index) else 0
             for index in xrange(1, self.num_positions + 1)
         ]
 
@@ -129,26 +131,16 @@ class TicTacToe:
 
     def check_one_direction(self, index, piece, d_row, d_col):
         row, col = self.index2position(index)
-        if d_row > 0:
-            row_end = self.board_size - 1
-        elif d_row < 0:
-            row_end = 0
-        else:
-            row_end = row
 
-        if d_col > 0:
-            col_end = self.board_size - 1
-        elif d_col < 0:
-            col_end = 0
-        else:
-            col_end = col
+        row_end = self.board_size - 1 if d_row > 0 else 0 if d_row < 0 else row
+        col_end = self.board_size - 1 if d_col > 0 else 0 if d_col < 0 else col
 
         if d_row == 0:
-            limit = int(math.fabs(col_end - col))
+            limit = abs(col_end - col)
         elif d_col == 0:
-            limit = int(math.fabs(row_end - row))
+            limit = abs(row_end - row)
         else:
-            limit = int(min(math.fabs(row_end - row), math.fabs(col_end - col)))
+            limit = min(abs(row_end - row), abs(col_end - col))
 
         if piece is None:
             piece = self.board[index - 1]
@@ -156,8 +148,8 @@ class TicTacToe:
         for i in xrange(1, limit + 1):
             r = row + i * d_row
             c = col + i * d_col
-            idx = self.position2index(r, c)
-            if self.board[idx - 1] != piece:
+            index = self.position2index(r, c)
+            if self.board[index - 1] != piece:
                 return i - 1
 
         return limit
@@ -176,14 +168,20 @@ if __name__ == "__main__":
     while True:
         t.display_movement()
 
+        # human move
         index = t.get_position()
-        print "You have put an X at position %d." % index
-        t.place_piece(index, human_side)
+        if index is None:
+            print "No more moves, it's a draw"
+            break
+        else:
+            print "You have put an X at position %d." % index
+            t.place_piece(index, human_side)
 
         if t.is_game_over(index):
             print "You have beaten my poor AI."
             break
 
+        # ai move
         index = t.ai_move(debug=False)
         if index is None:
             print "No more moves, it's a draw."
